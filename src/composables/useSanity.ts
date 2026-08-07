@@ -1,9 +1,18 @@
 const SANITY_PROXY_URL = '/.netlify/functions/sanity-proxy';
 
-export async function useSanityQuery<T = unknown>(query: string, params?: Record<string, unknown>): Promise<T> {
+// Reads through the server-side proxy, which now requires auth + reads with a
+// token. Pass the caller's Auth0 access token (getAccessTokenSilently()).
+export async function useSanityQuery<T = unknown>(
+  query: string,
+  params?: Record<string, unknown>,
+  token?: string,
+): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
   const res = await fetch(SANITY_PROXY_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ query, params }),
   });
 

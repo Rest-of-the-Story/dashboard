@@ -53,7 +53,8 @@ const SHELF_QUERY = `*[_type == "postIdea" && used != true]{
 onMounted(async () => {
   try {
     const month = new Date().toLocaleString('en-US', { month: 'short' }).toLowerCase();
-    ideas.value = await useSanityQuery<Idea[]>(SHELF_QUERY, { month });
+    const token = await getAccessTokenSilently();
+    ideas.value = await useSanityQuery<Idea[]>(SHELF_QUERY, { month }, token);
   } catch (err) {
     loadError.value = err instanceof Error ? err.message : 'Could not load ideas.';
   } finally {
