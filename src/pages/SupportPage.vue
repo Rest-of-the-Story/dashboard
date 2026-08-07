@@ -8,8 +8,8 @@ import config from '@/config/dashboard';
 const { user, getAccessTokenSilently } = useAuth0();
 
 const form = ref({
-  name: user.value?.name || '',
-  email: user.value?.email || config.clientEmail || '',
+  name: user.value?.name || 'Andy',
+  email: user.value?.email || config.clientEmail || 'info@therestofthestory.store',
   subject: '',
   category: 'question',
   message: '',
@@ -92,12 +92,12 @@ async function submit() {
 
         <div class="support__field">
           <label class="support__label">Name</label>
-          <input v-model="form.name" type="text" class="support__input" placeholder="Andy" />
+          <input v-model="form.name" type="text" class="support__input" />
         </div>
 
         <div class="support__field">
           <label class="support__label">Email</label>
-          <input v-model="form.email" type="email" class="support__input" placeholder="info@therestofthestory.store" />
+          <input v-model="form.email" type="email" class="support__input" />
         </div>
 
         <div class="support__field">
