@@ -4,7 +4,6 @@ import { useAuth0 } from '@auth0/auth0-vue';
 
 const DashboardHome = () => import('@/pages/DashboardHome.vue');
 const AnalyticsPage = () => import('@/pages/AnalyticsPage.vue');
-const ContentKitPage = () => import('@/pages/ContentKitPage.vue');
 const SupportPage = () => import('@/pages/SupportPage.vue');
 const BillingPage = () => import('@/pages/BillingPage.vue');
 const NotFound = () => import('@/pages/NotFound.vue');
@@ -12,7 +11,6 @@ const NotFound = () => import('@/pages/NotFound.vue');
 const routes = [
   { path: '/', name: 'Dashboard', component: DashboardHome },
   { path: '/analytics', name: 'Analytics', component: AnalyticsPage },
-  { path: '/content-kit', name: 'ContentKit', component: ContentKitPage },
   { path: '/support', name: 'Support', component: SupportPage },
   { path: '/billing', name: 'Billing', component: BillingPage },
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },

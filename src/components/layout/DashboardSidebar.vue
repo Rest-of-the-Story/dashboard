@@ -9,7 +9,6 @@ import { useAuth0 } from '@auth0/auth0-vue';
 import {
   LayoutDashboard,
   BarChart3,
-  ClipboardList,
   MessageSquare,
   CreditCard,
   UserCircle,
@@ -43,7 +42,6 @@ interface NavItem { to: string; label: string; icon: unknown }
 const navItems: NavItem[] = [
     { to: '/', label: 'Overview', icon: LayoutDashboard },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/content-kit', label: 'Content Kit', icon: ClipboardList },
   { to: '/support', label: 'Contact & Support', icon: MessageSquare },
   { to: '/billing', label: 'Billing', icon: CreditCard },
 ];

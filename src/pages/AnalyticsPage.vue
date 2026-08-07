@@ -8,7 +8,7 @@ import config from '@/config/dashboard';
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip);
 
 const analytics = config.analytics;
-const internalRoutes = analytics?.internalRoutes ?? ['/analytics', '/billing', '/content-kit', '/support'];
+const internalRoutes = analytics?.internalRoutes ?? ['/analytics', '/billing', '/support'];
 const conversionPage = analytics?.conversionPage ?? '/contact';
 const conversionLabel = conversionPage.replace(/^\//, '').replace(/-/g, ' ');
 const isGA4 = analytics?.provider === 'ga4';

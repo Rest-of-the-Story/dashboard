@@ -47,22 +47,6 @@ export interface AnalyticsConfig {
   conversionPage?: string;
 }
 
-export interface ContentKitSection {
-  id: string;
-  label: string;
-  description: string;
-  enabled: boolean;
-  required: boolean;
-}
-
-export interface ContentKitConfig {
-  enabled: boolean;
-  sections: ContentKitSection[];
-  maxPersonalityPicks?: number;
-  welcomeMessage?: string;
-  completionEmailNotify?: boolean;
-}
-
 export interface DashboardConfig {
   clientId: string;
   clientName: string;
@@ -74,5 +58,4 @@ export interface DashboardConfig {
   contentEditors: ContentEditor[];
   billing?: BillingConfig;
   analytics?: AnalyticsConfig;
-  contentKit?: ContentKitConfig;
 }
