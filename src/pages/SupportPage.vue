@@ -92,12 +92,12 @@ async function submit() {
 
         <div class="support__field">
           <label class="support__label">Name</label>
-          <input v-model="form.name" type="text" class="support__input" />
+          <input v-model="form.name" type="text" class="support__input" placeholder="Andy" />
         </div>
 
         <div class="support__field">
           <label class="support__label">Email</label>
-          <input v-model="form.email" type="email" class="support__input" />
+          <input v-model="form.email" type="email" class="support__input" placeholder="info@therestofthestory.store" />
         </div>
 
         <div class="support__field">
