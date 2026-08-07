@@ -1,0 +1,36 @@
+/* Font imports — scaffolder injects @import statements above :root */
+
+:root {
+  --color-primary: #293b3f;
+  --color-secondary: #9fba9a;
+  --color-accent: #e1a497;
+  --color-bg: #ffffff;
+  --color-surface: #f4f6f2;
+  --color-text: #293b3f;
+  --color-text-secondary: #55676b;
+  --color-text-inverse: #ffffff;
+  --color-border: #e1e5de;
+  --color-sidebar-bg: #293b3f;
+  --color-sidebar-text: #dce3e2;
+  --color-sidebar-hover: #35494e;
+  --color-sidebar-active: #4a6a4e;
+  --font-heading: 'Libre Baskerville', sans-serif;
+  --font-body: 'Nunito Sans', sans-serif;
+  --border-radius: 0.25rem;
+}
+
+[data-theme="dark"] {
+  --color-primary: #8fb0b5;
+  --color-secondary: #a9c4a4;
+  --color-accent: #e8b4a9;
+  --color-bg: #1a2427;
+  --color-surface: #222e31;
+  --color-text: #e7eceb;
+  --color-text-secondary: #afbbba;
+  --color-text-inverse: #1a2427;
+  --color-border: #35454a;
+  --color-sidebar-bg: #141d1f;
+  --color-sidebar-text: #cdd6d5;
+  --color-sidebar-hover: #202b2e;
+  --color-sidebar-active: #567a59;
+}
