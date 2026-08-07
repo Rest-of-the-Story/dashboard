@@ -109,15 +109,22 @@ export async function handler(event: {
 
     // A frame, not a finished post — bracketed guidance the writer replaces,
     // per the blog-assist grounding rules (never invent people/quotes).
+    // A+ scaffold: a guided section skeleton (not prose — that's the future
+    // Option B). Bracketed prompts follow the grounding voice rules; the writer
+    // replaces each one.
     const audienceLabel = audience ? AUDIENCE_LABELS[audience] || audience : null;
     const body = [
-      block(`[Draft frame — replace this. Angle: ${angle || 'see the idea shelf.'}]`),
-      audienceLabel ? block(`[Write to ${audienceLabel}. Category: ${category || 'set in Studio'}.]`) : null,
+      block(`[Angle: ${angle || 'see the idea shelf.'}]`),
+      audienceLabel
+        ? block(`[Write the whole post to ${audienceLabel}. Aim for 400–700 words, plain and specific.]`)
+        : null,
+      block('[Open — something concrete and specific. No rhetorical-question opener, no “ever wonder…”.]'),
+      block('[Middle — the useful part. Name real things: brands, sizes, seasons, streets, prices. Earn the read.]'),
       needsOwnerStory
         ? block('[Andy / Heather — a real story goes here. Do not invent one.]')
         : null,
-      block('[Image idea: describe a photo you could actually take in the shop.]'),
-      block(''),
+      block('[Close — warm and plain. No hard sell, and go easy on exclamation points.]'),
+      block('[Image idea: a photo you could actually take in the shop.]'),
     ].filter(Boolean);
 
     const draftId = `drafts.${randomUUID()}`;

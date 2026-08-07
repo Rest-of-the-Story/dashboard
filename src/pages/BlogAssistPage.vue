@@ -4,7 +4,7 @@ import { useAuth0 } from '@auth0/auth0-vue';
 import DashboardLayout from '@/components/layout/DashboardLayout.vue';
 import { useSanityQuery } from '@/composables/useSanity';
 import config from '@/config/dashboard';
-import { Lightbulb, PenLine, ExternalLink, AlertTriangle, CheckCircle2 } from 'lucide-vue-next';
+import { Lightbulb, PenLine, ExternalLink, AlertTriangle, CheckCircle2, Plus, X } from 'lucide-vue-next';
 
 const { getAccessTokenSilently } = useAuth0();
 
@@ -89,6 +89,50 @@ async function createDraft(idea: Idea) {
     creating.value[idea._id] = false;
   }
 }
+
+// --- Add a new idea ---
+const showForm = ref(false);
+const submitting = ref(false);
+const formError = ref('');
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+const blankIdea = () => ({ title: '', angle: '', category: 'thrifting', pillar: '', audience: '', seasons: [] as string[], needsOwnerStory: false });
+const form = ref(blankIdea());
+
+function toggleSeason(m: string) {
+  const i = form.value.seasons.indexOf(m);
+  if (i === -1) form.value.seasons.push(m);
+  else form.value.seasons.splice(i, 1);
+}
+
+async function submitIdea() {
+  if (!form.value.title.trim() || !form.value.angle.trim()) {
+    formError.value = 'Title and angle are required.';
+    return;
+  }
+  submitting.value = true;
+  formError.value = '';
+  try {
+    const token = await getAccessTokenSilently();
+    const res = await fetch('/.netlify/functions/sanity-create-idea', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        ...form.value,
+        pillar: form.value.pillar || undefined,
+        audience: form.value.audience || undefined,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Server returned ${res.status}`);
+    ideas.value.unshift(data.idea as Idea);
+    form.value = blankIdea();
+    showForm.value = false;
+  } catch (err) {
+    formError.value = err instanceof Error ? err.message : 'Could not add the idea.';
+  } finally {
+    submitting.value = false;
+  }
+}
 </script>
 
 <template>
@@ -98,6 +142,60 @@ async function createDraft(idea: Idea) {
         <Lightbulb :size="20" />
         <p>Pick an idea to start a blog post <strong>draft</strong> in your Sanity Studio. Ideas in season show first. Nothing publishes — you finish and publish each draft yourself.</p>
       </header>
+
+      <div class="assist__addbar">
+        <button class="addbtn" @click="showForm = !showForm">
+          <component :is="showForm ? X : Plus" :size="15" /> {{ showForm ? 'Cancel' : 'Add an idea' }}
+        </button>
+      </div>
+
+      <form v-if="showForm" class="ideaform" @submit.prevent="submitIdea">
+        <label class="ideaform__field">Working title
+          <input v-model="form.title" type="text" maxlength="90" placeholder="Short working title" required />
+        </label>
+        <label class="ideaform__field">Angle
+          <textarea v-model="form.angle" rows="2" placeholder="One or two sentences on what the post does" required></textarea>
+        </label>
+        <div class="ideaform__grid">
+          <label>Category
+            <select v-model="form.category">
+              <option value="thrifting">Thrifting</option>
+              <option value="parenting">Parenting</option>
+              <option value="community">Community</option>
+              <option value="faith">Faith</option>
+            </select>
+          </label>
+          <label>Pillar
+            <select v-model="form.pillar">
+              <option value="">—</option>
+              <option value="kids">Kids</option>
+              <option value="homeschool">Homeschool</option>
+              <option value="maternity">Maternity</option>
+              <option value="general">Shop-wide</option>
+            </select>
+          </label>
+          <label>Write to
+            <select v-model="form.audience">
+              <option value="">—</option>
+              <option value="youngMom">Young mom (16–20)</option>
+              <option value="parent">Parent (20–40)</option>
+            </select>
+          </label>
+        </div>
+        <div class="ideaform__field">
+          <span class="ideaform__lbl">Seasonal months <em>(blank = evergreen)</em></span>
+          <div class="months">
+            <button v-for="m in MONTHS" :key="m" type="button" class="month" :class="{ 'month--on': form.seasons.includes(m) }" @click="toggleSeason(m)">{{ m }}</button>
+          </div>
+        </div>
+        <label class="ideaform__check">
+          <input v-model="form.needsOwnerStory" type="checkbox" /> Needs a real story from Andy or Heather
+        </label>
+        <div class="ideaform__actions">
+          <button class="addbtn addbtn--primary" type="submit" :disabled="submitting">{{ submitting ? 'Adding…' : 'Add idea' }}</button>
+          <span v-if="formError" class="idea__err">{{ formError }}</span>
+        </div>
+      </form>
 
       <div v-if="loading" class="assist__state">Loading ideas…</div>
       <div v-else-if="loadError" class="assist__state assist__state--error">{{ loadError }}</div>
@@ -183,4 +281,35 @@ async function createDraft(idea: Idea) {
 .idea__open { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--color-primary); text-decoration: none; }
 .idea__open:hover { text-decoration: underline; }
 .idea__err { font-size: 0.75rem; color: var(--color-danger, #c0574c); max-width: 200px; text-align: right; }
+
+/* Add-idea form */
+.assist__addbar { margin-bottom: 12px; }
+.addbtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border: 1px solid var(--color-border); border-radius: var(--border-radius, 0.5rem);
+  background: var(--color-bg); color: var(--color-text); font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.addbtn--primary { background: var(--color-primary); color: var(--color-text-inverse); border-color: transparent; }
+.addbtn:disabled { opacity: 0.6; cursor: default; }
+.ideaform {
+  display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;
+  padding: 16px; border: 1px solid var(--color-border); border-radius: var(--border-radius, 0.5rem); background: var(--color-surface);
+}
+.ideaform__field, .ideaform > label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--color-text-secondary); }
+.ideaform input[type=text], .ideaform textarea, .ideaform select {
+  padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 6px;
+  background: var(--color-bg); color: var(--color-text); font: inherit; font-size: 0.9rem;
+}
+.ideaform__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.ideaform__grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--color-text-secondary); }
+.ideaform__lbl { font-size: 0.8rem; color: var(--color-text-secondary); }
+.ideaform__lbl em { color: var(--color-text-muted); font-style: normal; }
+.months { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.month {
+  text-transform: capitalize; font-size: 0.72rem; padding: 3px 8px; border-radius: 999px;
+  border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-text-secondary); cursor: pointer;
+}
+.month--on { background: var(--color-accent); color: var(--color-text-inverse); border-color: transparent; }
+.ideaform__check { flex-direction: row; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--color-text); }
+.ideaform__actions { display: flex; align-items: center; gap: 12px; }
 </style>
