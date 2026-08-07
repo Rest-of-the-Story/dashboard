@@ -8,7 +8,8 @@ import config from '@/config/dashboard';
 const { user, getAccessTokenSilently } = useAuth0();
 
 const form = ref({
-  name: user.value?.name || 'Andy',
+  // Auth0 fills `name` with the email when no real name is set — ignore that.
+  name: user.value?.name && !user.value.name.includes('@') ? user.value.name : 'Andy',
   email: user.value?.email || config.clientEmail || 'info@therestofthestory.store',
   subject: '',
   category: 'question',
