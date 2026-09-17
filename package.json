@@ -1,19 +1,22 @@
 {
-  "name": "pws-dashboard-template",
+  "name": "rots-dashboard",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "netlify dev",
+    "dev:vite": "vite",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@auth0/auth0-vue": "^2.3.3",
+    "@libsql/client": "^0.18.0",
     "@sanity/client": "^7.3.0",
     "@unhead/vue": "^1.11.20",
     "@vueuse/core": "^12.7.0",
     "chart.js": "^4.5.1",
+    "jose": "^6.2.12",
     "lucide-vue-next": "^0.474.0",
     "pinia": "^2.3.0",
     "resend": "^6.18.1",

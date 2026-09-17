@@ -20,6 +20,10 @@ app.use(
     authorizationParams: {
       redirect_uri: window.location.origin,
     },
+    // Survive a refresh (and Safari/Chrome third-party cookie blocking), so
+    // fetching the ID token for API calls doesn't bounce the user to login.
+    cacheLocation: 'localstorage',
+    useRefreshTokens: true,
   })
 );
 

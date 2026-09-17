@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useAuth0 } from '@auth0/auth0-vue';
+import { useAuthToken } from '@/composables/useAuthToken';
+import { apiFetch } from '@/composables/useApi';
 import DashboardLayout from '@/components/layout/DashboardLayout.vue';
 import {
   CreditCard,
@@ -15,7 +16,7 @@ import {
 } from 'lucide-vue-next';
 import config from '@/config/dashboard';
 
-const { getAccessTokenSilently } = useAuth0();
+const authToken = useAuthToken();
 
 const billing = config.billing;
 const loading = ref(true);
@@ -43,6 +44,11 @@ interface Invoice {
   paidAt?: number | null;
   hostedInvoiceUrl: string | null;
   invoicePdf?: string | null;
+  /** Paid outside Stripe (Zelle/check), billed from the Pipeline Dashboard */
+  paymentMethod?: string | null;
+  source?: 'stripe' | 'offline';
+  /** Offline rows carry their own status: sent | paid | overdue | cancelled */
+  status?: string;
 }
 
 interface PaymentMethod {
@@ -78,27 +84,40 @@ function capitalizeFirst(str: string) {
 }
 
 async function fetchBillingSummary() {
-  if (!billing?.stripeCustomerId) return;
-
   loading.value = true;
   error.value = null;
 
   try {
-    const token = await getAccessTokenSilently();
-    const res = await fetch(
-      `/.netlify/functions/stripe-get-billing-summary?customerId=${billing.stripeCustomerId}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    if (!res.ok) throw new Error('Failed to load billing data');
-
-    const data = await res.json();
+    const token = await authToken();
+    // Stripe plus the invoices billed from the Pipeline Dashboard and paid by
+    // Zelle/check. Offline billing is how this client actually pays, so leaving
+    // it out made the page look like payments had stopped.
+    const [data, offline] = await Promise.all([
+      apiFetch<any>('/.netlify/functions/stripe-get-billing-summary', { token }),
+      apiFetch<any>('/.netlify/functions/offline-invoices', { token }).catch(() => null),
+    ]);
     if (!data.success) throw new Error(data.error || 'Unknown error');
 
+    const offlineInvoices: Invoice[] = (offline?.invoices || []).map((inv: any) => ({
+      ...inv,
+      hostedInvoiceUrl: null,
+      source: 'offline' as const,
+    }));
+    const newestFirst = (a: Invoice, b: Invoice) =>
+      (b.paidAt || b.created) - (a.paidAt || a.created);
+
     subscription.value = data.subscription;
-    pendingCharges.value = data.pendingCharges || [];
-    recentPayments.value = data.recentPayments || [];
     paymentMethod.value = data.paymentMethod;
+
+    pendingCharges.value = [
+      ...(data.pendingCharges || []),
+      ...offlineInvoices.filter(inv => inv.status === 'sent' || inv.status === 'overdue'),
+    ].sort(newestFirst);
+
+    recentPayments.value = [
+      ...(data.recentPayments || []),
+      ...offlineInvoices.filter(inv => inv.status === 'paid'),
+    ].sort(newestFirst);
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load billing data';
   } finally {
@@ -107,24 +126,15 @@ async function fetchBillingSummary() {
 }
 
 async function openPortal() {
-  if (!billing?.stripeCustomerId) return;
-
   portalLoading.value = true;
   try {
-    const token = await getAccessTokenSilently();
-    const res = await fetch('/.netlify/functions/stripe-create-portal-session', {
+    const token = await authToken();
+    const data = await apiFetch<any>('/.netlify/functions/stripe-create-portal-session', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        customerId: billing.stripeCustomerId,
-        returnUrl: window.location.href,
-      }),
+      token,
+      body: JSON.stringify({ returnUrl: window.location.href }),
     });
 
-    const data = await res.json();
     if (data.success && data.url) {
       window.open(data.url, '_blank');
     } else {
@@ -143,7 +153,7 @@ onMounted(fetchBillingSummary);
 <template>
   <DashboardLayout page-title="Billing">
     <!-- Not configured -->
-    <div v-if="!billing?.stripeCustomerId" class="billing-placeholder">
+    <div v-if="!billing?.enabled" class="billing-placeholder">
       <CreditCard :size="48" class="billing-placeholder__icon" />
       <h2>Billing Not Configured</h2>
       <p>Billing has not been set up for this dashboard yet. Contact your web administrator for assistance.</p>
@@ -265,7 +275,9 @@ onMounted(fetchBillingSummary);
               </span>
             </div>
             <div class="billing-invoice-row__actions">
-              <span class="billing-badge billing-badge--active">Paid</span>
+              <span class="billing-badge billing-badge--active">
+                Paid{{ payment.paymentMethod ? ` · ${capitalizeFirst(payment.paymentMethod)}` : '' }}
+              </span>
               <a
                 v-if="payment.invoicePdf"
                 :href="payment.invoicePdf"
@@ -424,7 +436,7 @@ onMounted(fetchBillingSummary);
 .billing-badge--canceled,
 .billing-badge--incomplete_expired {
   background-color: rgba(239, 68, 68, 0.12);
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 .billing-badge--trialing {
@@ -638,7 +650,7 @@ onMounted(fetchBillingSummary);
   padding: 0.75rem 1rem;
   border-radius: var(--border-radius);
   background-color: rgba(239, 68, 68, 0.08);
-  color: #dc2626;
+  color: var(--color-danger);
   font-size: 0.875rem;
 }
 </style>

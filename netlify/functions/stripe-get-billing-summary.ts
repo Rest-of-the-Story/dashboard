@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { requireUser } from './_auth';
 
 interface BillingSummary {
   subscription: {
@@ -41,14 +42,14 @@ interface BillingSummary {
 }
 
 export async function handler(event: { queryStringParameters: Record<string, string> | null; headers: Record<string, string> }) {
-  const authHeader = event.headers['authorization'] || event.headers['Authorization'];
-  if (!authHeader) {
-    return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
+  const auth = await requireUser(event);
+  if ('statusCode' in auth) return auth;
 
-  const customerId = event.queryStringParameters?.customerId;
+  // The customer is fixed server-side. Taking it from the request let anyone
+  // read (and with the portal, control) any customer in the Stripe account.
+  const customerId = process.env.STRIPE_CUSTOMER_ID;
   if (!customerId) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Missing customerId' }) };
+    return { statusCode: 500, body: JSON.stringify({ error: 'STRIPE_CUSTOMER_ID is not set' }) };
   }
 
   const stripeConfig = process.env.STRIPE_CONFIG;
@@ -121,12 +122,33 @@ export async function handler(event: { queryStringParameters: Record<string, str
       hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
     }));
 
-    // Fetch recent paid invoices
-    const paidInvoices = await stripe.invoices.list({
-      customer: customerId,
-      status: 'paid',
-      limit: 10,
-    });
+    // Paid invoices from the primary customer plus any legacy records. The
+    // client's billing moved to a new Stripe customer, so their earlier
+    // payments live on the old one; STRIPE_LEGACY_CUSTOMER_IDS (comma
+    // separated) folds that history in. Read-only: the subscription, payment
+    // method and portal all stay on the primary customer.
+    const legacyIds = (process.env.STRIPE_LEGACY_CUSTOMER_IDS || '')
+      .split(',')
+      .map(id => id.trim())
+      .filter(id => id && id !== customerId);
+
+    const paidInvoiceSets = await Promise.all(
+      [customerId, ...legacyIds].map(id =>
+        stripe.invoices
+          .list({ customer: id, status: 'paid', limit: 10 })
+          .catch(err => {
+            console.warn(`Could not read invoices for ${id}:`, err instanceof Error ? err.message : err);
+            return { data: [] as Stripe.Invoice[] };
+          })
+      )
+    );
+
+    const paidInvoices = {
+      data: paidInvoiceSets
+        .flatMap(set => set.data)
+        .sort((a, b) => b.created - a.created)
+        .slice(0, 10),
+    };
 
     const recentPayments: BillingSummary['recentPayments'] = paidInvoices.data.map((inv) => ({
       id: inv.id,

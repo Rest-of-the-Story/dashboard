@@ -1,15 +1,13 @@
 import { Resend } from 'resend';
+import { requireUser } from './_auth';
 
 // Contact & Support endpoint. Dashboard users submit a request via
 // SupportPage.vue; this function emails it to the developer's inbox
 // via Resend. Reply-to is the requester's email so a Reply from
 // the recipient lands back in the user's inbox directly.
 //
-// Auth: presence-only check on the Authorization header matches the
-// pattern used by stripe-get-billing-summary. Effectively UI-gated
-// (only Auth0-logged-in dashboard users hit this from the browser),
-// which blocks anonymous curl abuse without the JWKS overhead of
-// full JWT verification.
+// Auth: the caller's Auth0 ID token is verified against the tenant JWKS
+// (see _auth.ts), so this can't be used as an anonymous mail relay.
 
 interface SupportRequestPayload {
   name?: string;
@@ -39,10 +37,8 @@ export async function handler(event: {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  const authHeader = event.headers['authorization'] || event.headers['Authorization'];
-  if (!authHeader) {
-    return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
+  const auth = await requireUser(event);
+  if ('statusCode' in auth) return auth;
 
   let payload: SupportRequestPayload;
   try {
@@ -109,6 +105,8 @@ export async function handler(event: {
       };
     }
 
+    await forwardToQueue(payload);
+
     return { statusCode: 200, body: JSON.stringify({ success: true }) };
   } catch (err) {
     console.error('Support request error:', err);
@@ -116,6 +114,34 @@ export async function handler(event: {
       statusCode: 500,
       body: JSON.stringify({ error: 'An unexpected error occurred.' }),
     };
+  }
+}
+
+/**
+ * Optional second destination: the /requests queue. Server-side so the URL and
+ * its credential stay out of the browser bundle, and so only verified callers
+ * can reach it. Never fails the support request — the email is the system of
+ * record; a queue outage shouldn't lose the client's message.
+ *
+ * Env: SUPPORT_WEBHOOK_URL, optional SUPPORT_WEBHOOK_TOKEN
+ */
+async function forwardToQueue(payload: SupportRequestPayload): Promise<void> {
+  const url = process.env.SUPPORT_WEBHOOK_URL;
+  if (!url) return;
+
+  const token = process.env.SUPPORT_WEBHOOK_TOKEN;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) console.error('Support queue forward failed:', res.status);
+  } catch (err) {
+    console.error('Support queue forward error:', err instanceof Error ? err.message : err);
   }
 }
 

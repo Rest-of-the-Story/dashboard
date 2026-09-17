@@ -1,19 +1,33 @@
+import { requireUser } from './_auth';
+
 /**
  * Analytics Proxy — fetches from Simple Analytics API on behalf of the dashboard.
  * Keeps the SA API key server-side so it's never exposed to the client.
  *
- * Query params: hostname, start, end
- * Env: SIMPLE_ANALYTICS_API_KEY
+ * Auth required (see _auth.ts): without it this was an open proxy in front of a
+ * paid API key — any caller could pull stats for any hostname. The hostname is
+ * pinned server-side for the same reason; only the date range comes from the UI.
+ *
+ * Query params: start, end
+ * Env: SIMPLE_ANALYTICS_API_KEY, ANALYTICS_HOSTNAME
  */
 export async function handler(event: {
   queryStringParameters: Record<string, string> | null;
+  headers: Record<string, string>;
 }) {
-  const { hostname, start, end } = event.queryStringParameters || {};
+  const auth = await requireUser(event);
+  if ('statusCode' in auth) return auth;
 
-  if (!hostname || !start || !end) {
+  const { start, end } = event.queryStringParameters || {};
+  const hostname = process.env.ANALYTICS_HOSTNAME;
+
+  if (!hostname) {
+    return { statusCode: 500, body: JSON.stringify({ error: 'ANALYTICS_HOSTNAME is not set' }) };
+  }
+  if (!start || !end) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'Missing required params: hostname, start, end' }),
+      body: JSON.stringify({ error: 'Missing required params: start, end' }),
     };
   }
 

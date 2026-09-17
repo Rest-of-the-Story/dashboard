@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useAuth0 } from '@auth0/auth0-vue';
+import { useAuthToken } from '@/composables/useAuthToken';
+import { apiFetch } from '@/composables/useApi';
 import DashboardLayout from '@/components/layout/DashboardLayout.vue';
 import { Send, CheckCircle } from 'lucide-vue-next';
 import config from '@/config/dashboard';
 
-const { user, getAccessTokenSilently } = useAuth0();
+const { user } = useAuth0();
+const authToken = useAuthToken();
 
 const form = ref({
   // Auth0 fills `name` with the email when no real name is set — ignore that.
@@ -24,11 +27,17 @@ const CATEGORIES = [
   { value: 'bug', label: 'Bug Report' },
   { value: 'update', label: 'Update Request' },
   { value: 'question', label: 'Question' },
+  { value: 'feature', label: 'Feature Request' },
   { value: 'other', label: 'Other' },
 ];
 
 async function submit() {
-  if (!form.value.subject.trim() || !form.value.message.trim()) return;
+  // `required` accepts whitespace, and the old guard then returned silently —
+  // the button looked dead. Say what's missing instead.
+  if (!form.value.subject.trim() || !form.value.message.trim()) {
+    error.value = 'Please fill in both a subject and a message.';
+    return;
+  }
 
   sending.value = true;
   error.value = null;
@@ -42,24 +51,15 @@ async function submit() {
 
   try {
     // Primary: Netlify function
-    const token = await getAccessTokenSilently();
-    const res = await fetch('/.netlify/functions/receive-support-request', {
+    const token = await authToken();
+    // The function emails this and forwards it to the request queue server-side
+    // (SUPPORT_WEBHOOK_URL). It used to be posted from here via a VITE_ variable,
+    // which shipped the queue URL in the bundle for anyone to spam.
+    await apiFetch('/.netlify/functions/receive-support-request', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      token,
       body: JSON.stringify(payload),
     });
-
-    if (!res.ok) throw new Error(`Server returned ${res.status}`);
-
-    // Optional: webhook notification (Slack, email, etc.)
-    const webhookUrl = import.meta.env.VITE_SUPPORT_WEBHOOK_URL;
-    if (webhookUrl) {
-      fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).catch(() => {}); // fire-and-forget
-    }
 
     sent.value = true;
   } catch (err) {
@@ -74,7 +74,7 @@ async function submit() {
   <DashboardLayout page-title="Contact & Support">
     <div class="support">
       <!-- Success state -->
-      <div v-if="sent" class="support__success">
+      <div v-if="sent" class="support__success" role="status">
         <CheckCircle :size="48" class="support__success-icon" />
         <h2 class="support__success-title">Request Submitted</h2>
         <p class="support__success-text">
@@ -92,18 +92,18 @@ async function submit() {
         </p>
 
         <div class="support__field">
-          <label class="support__label">Name</label>
-          <input v-model="form.name" type="text" class="support__input" />
+          <label class="support__label" for="support-name">Name</label>
+          <input id="support-name" v-model="form.name" type="text" class="support__input" />
         </div>
 
         <div class="support__field">
-          <label class="support__label">Email</label>
-          <input v-model="form.email" type="email" class="support__input" />
+          <label class="support__label" for="support-email">Email</label>
+          <input id="support-email" v-model="form.email" type="email" class="support__input" />
         </div>
 
         <div class="support__field">
-          <label class="support__label">Category</label>
-          <select v-model="form.category" class="support__select">
+          <label class="support__label" for="support-category">Category</label>
+          <select id="support-category" v-model="form.category" class="support__select">
             <option v-for="cat in CATEGORIES" :key="cat.value" :value="cat.value">
               {{ cat.label }}
             </option>
@@ -111,16 +111,16 @@ async function submit() {
         </div>
 
         <div class="support__field">
-          <label class="support__label">Subject *</label>
-          <input v-model="form.subject" type="text" class="support__input" placeholder="Brief summary of your request" required />
+          <label class="support__label" for="support-subject">Subject *</label>
+          <input id="support-subject" v-model="form.subject" type="text" class="support__input" placeholder="Brief summary of your request" required />
         </div>
 
         <div class="support__field">
-          <label class="support__label">Message *</label>
-          <textarea v-model="form.message" class="support__textarea" rows="6" placeholder="Describe what you need help with in detail" required></textarea>
+          <label class="support__label" for="support-message">Message *</label>
+          <textarea id="support-message" v-model="form.message" class="support__textarea" rows="6" placeholder="Describe what you need help with in detail" required></textarea>
         </div>
 
-        <p v-if="error" class="support__error">{{ error }}</p>
+        <p v-if="error" class="support__error" role="alert">{{ error }}</p>
 
         <button type="submit" class="support__submit" :disabled="sending">
           <Send :size="16" />
@@ -192,7 +192,7 @@ async function submit() {
 
 .support__error {
   font-size: 0.8125rem;
-  color: var(--color-danger, #dc2626);
+  color: var(--color-danger, var(--color-danger));
 }
 
 .support__submit {

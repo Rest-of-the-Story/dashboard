@@ -1,8 +1,9 @@
 import { createClient } from '@sanity/client';
+import { requireUser } from './_auth';
 
 // Blog-assist: add a new postIdea to the shelf from the dashboard, so the client
 // can replenish ideas without opening Studio. Writes with SANITY_WRITE_TOKEN.
-// Presence-only Authorization check (house style); the page sends the Auth0 token.
+// Auth: verified Auth0 ID token (see _auth.ts).
 
 interface CreateIdeaPayload {
   title?: string;
@@ -27,10 +28,8 @@ export async function handler(event: {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
-  const authHeader = event.headers['authorization'] || event.headers['Authorization'];
-  if (!authHeader) {
-    return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
+  const auth = await requireUser(event);
+  if ('statusCode' in auth) return auth;
 
   let payload: CreateIdeaPayload;
   try {

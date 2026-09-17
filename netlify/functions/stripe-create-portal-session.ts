@@ -1,20 +1,13 @@
 import Stripe from 'stripe';
+import { requireUser } from './_auth';
 
 interface RequestBody {
-  customerId: string;
-  returnUrl: string;
+  returnUrl?: string;
 }
 
 export async function handler(event: { body: string | null; headers: Record<string, string> }) {
-  // Auth check — require Authorization header
-  const authHeader = event.headers['authorization'] || event.headers['Authorization'];
-  if (!authHeader) {
-    return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
-
-  if (event.body === null) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Missing request body' }) };
-  }
+  const auth = await requireUser(event);
+  if ('statusCode' in auth) return auth;
 
   const stripeConfig = process.env.STRIPE_CONFIG;
   if (!stripeConfig) {
@@ -24,10 +17,13 @@ export async function handler(event: { body: string | null; headers: Record<stri
   try {
     const { secretKey } = JSON.parse(stripeConfig);
     const stripe = new Stripe(secretKey);
-    const { customerId, returnUrl } = JSON.parse(event.body) as RequestBody;
+    const { returnUrl } = (JSON.parse(event.body || '{}') || {}) as RequestBody;
 
+    // Server-side only: a portal session grants control of the customer's
+    // billing, so the caller never gets to name the customer.
+    const customerId = process.env.STRIPE_CUSTOMER_ID;
     if (!customerId) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing customerId' }) };
+      return { statusCode: 500, body: JSON.stringify({ error: 'STRIPE_CUSTOMER_ID is not set' }) };
     }
 
     const session = await stripe.billingPortal.sessions.create({

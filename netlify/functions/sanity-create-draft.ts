@@ -1,17 +1,11 @@
 import { createClient } from '@sanity/client';
 import { randomUUID } from 'crypto';
+import { requireUser } from './_auth';
 
 // Blog-assist: create a Sanity `post` DRAFT from a chosen postIdea, and mark
 // the idea used. Writes with SANITY_WRITE_TOKEN (Editor role) — server-side only.
 //
-// SECURITY: presence-only Authorization check, matching the dashboard house
-// style. The page sends the caller's Auth0 token (getAccessTokenSilently), so
-// a request requires an authenticated session to obtain one; a fabricated
-// header still passes, but the only reachable action is creating an *unpublished
-// draft* (never published), whose blast radius is draft spam an editor deletes.
-// HARDENING (future): verify the Auth0 id_token against the tenant JWKS
-// (audience = client id) before writing. Left as a follow-up to avoid requiring
-// an Auth0 API/audience setup for v1.
+// Auth: verified Auth0 ID token (see _auth.ts) — writes require a real session.
 
 interface CreateDraftPayload {
   ideaId?: string;
@@ -58,10 +52,8 @@ export async function handler(event: {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  const authHeader = event.headers['authorization'] || event.headers['Authorization'];
-  if (!authHeader) {
-    return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
+  const auth = await requireUser(event);
+  if ('statusCode' in auth) return auth;
 
   let payload: CreateDraftPayload;
   try {

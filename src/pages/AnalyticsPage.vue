@@ -2,11 +2,16 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import DashboardLayout from '@/components/layout/DashboardLayout.vue';
 import { Users, Eye, Clock, TrendingUp, TrendingDown, Minus, ExternalLink, RefreshCw } from 'lucide-vue-next';
-import { Chart, BarElement, CategoryScale, LinearScale, Tooltip } from 'chart.js';
+import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip } from 'chart.js';
 import config from '@/config/dashboard';
+import { useAuthToken } from '@/composables/useAuthToken';
+import { apiFetch } from '@/composables/useApi';
 
-Chart.register(BarElement, CategoryScale, LinearScale, Tooltip);
+// BarController is required for type: 'bar' — without it Chart.js v4 throws
+// "bar is not a registered controller" and the page renders its error state.
+Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip);
 
+const authToken = useAuthToken();
 const analytics = config.analytics;
 const internalRoutes = analytics?.internalRoutes ?? ['/analytics', '/billing', '/support'];
 const conversionPage = analytics?.conversionPage ?? '/contact';
@@ -78,20 +83,20 @@ async function fetchAnalytics() {
   error.value = null;
 
   try {
-    const hostname = analytics?.simpleAnalyticsId || config.clientDomain;
     const { start, end, prevStart, prevEnd } = getDateRange(period.value);
+    const token = await authToken();
+    // The hostname lives server-side now (ANALYTICS_HOSTNAME).
+    const get = (from: string, to: string) =>
+      apiFetch<AnalyticsData>(`/.netlify/functions/analytics-proxy?start=${from}&end=${to}`, { token });
 
-    const [currentRes, previousRes] = await Promise.all([
-      fetch(`/.netlify/functions/analytics-proxy?hostname=${hostname}&start=${start}&end=${end}`),
-      fetch(`/.netlify/functions/analytics-proxy?hostname=${hostname}&start=${prevStart}&end=${prevEnd}`),
+    const [currentData, previousData] = await Promise.all([
+      get(start, end),
+      // The comparison period is a nice-to-have; don't fail the page over it.
+      get(prevStart, prevEnd).catch(() => null),
     ]);
 
-    if (!currentRes.ok) throw new Error(`Analytics request failed: ${currentRes.status}`);
-
-    current.value = await currentRes.json();
-    if (previousRes.ok) {
-      previous.value = await previousRes.json();
-    }
+    current.value = currentData;
+    previous.value = previousData;
 
     await nextTick();
     renderChart();
@@ -582,8 +587,8 @@ onMounted(fetchAnalytics);
 .ana__metric-label { font-size: 0.6875rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-secondary, var(--color-text)); }
 .ana__metric-value { font-size: 1.5rem; font-weight: 700; color: var(--color-text); font-family: var(--font-heading); }
 .ana__metric-trend { display: flex; align-items: center; gap: 0.25rem; margin-top: 0.25rem; font-size: 0.75rem; color: var(--color-text-secondary, var(--color-text)); }
-.ana__metric-trend--up { color: #16a34a; }
-.ana__metric-trend--down { color: #dc2626; }
+.ana__metric-trend--up { color: var(--color-success); }
+.ana__metric-trend--down { color: var(--color-danger); }
 
 /* ─── Funnel ──────────────────────────────────────────────────────────────── */
 .ana__funnel { margin-bottom: 1.5rem; }
@@ -613,7 +618,7 @@ onMounted(fetchAnalytics);
   background-color: var(--color-surface); border: 1px solid var(--color-border);
   border-radius: var(--border-radius); margin-bottom: 1.5rem;
 }
-.ana__insight-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #f59e0b; margin-top: 0.375rem; flex-shrink: 0; }
+.ana__insight-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--color-warning); margin-top: 0.375rem; flex-shrink: 0; }
 .ana__insight-heading { font-size: 0.8125rem; font-weight: 600; color: var(--color-text); margin-bottom: 0.25rem; }
 .ana__insight-text { font-size: 0.8125rem; color: var(--color-text-secondary, var(--color-text)); line-height: 1.6; }
 

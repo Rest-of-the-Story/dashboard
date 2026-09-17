@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useAuth0 } from '@auth0/auth0-vue';
+import { useAuthToken } from '@/composables/useAuthToken';
+import { apiFetch } from '@/composables/useApi';
 import DashboardLayout from '@/components/layout/DashboardLayout.vue';
 import { useSanityQuery } from '@/composables/useSanity';
 import config from '@/config/dashboard';
 import { Lightbulb, PenLine, ExternalLink, AlertTriangle, CheckCircle2, Plus, X } from 'lucide-vue-next';
 
-const { getAccessTokenSilently } = useAuth0();
+const authToken = useAuthToken();
 
 interface Idea {
   _id: string;
@@ -45,16 +46,11 @@ function studioLink(baseId: string | undefined): string {
   return `${studioUrl.value}/intent/edit/id=${baseId};type=post/`;
 }
 
-const SHELF_QUERY = `*[_type == "postIdea" && used != true]{
-  _id, title, angle, category, pillar, audience, needsOwnerStory,
-  "seasonal": $month in seasons
-} | order(seasonal desc, _createdAt asc)`;
-
 onMounted(async () => {
   try {
     const month = new Date().toLocaleString('en-US', { month: 'short' }).toLowerCase();
-    const token = await getAccessTokenSilently();
-    ideas.value = await useSanityQuery<Idea[]>(SHELF_QUERY, { month }, token);
+    const token = await authToken();
+    ideas.value = await useSanityQuery<Idea[]>('ideaShelf', { month }, token);
   } catch (err) {
     loadError.value = err instanceof Error ? err.message : 'Could not load ideas.';
   } finally {
@@ -66,10 +62,10 @@ async function createDraft(idea: Idea) {
   creating.value[idea._id] = true;
   createError.value[idea._id] = '';
   try {
-    const token = await getAccessTokenSilently();
-    const res = await fetch('/.netlify/functions/sanity-create-draft', {
+    const token = await authToken();
+    const data = await apiFetch<any>('/.netlify/functions/sanity-create-draft', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      token,
       body: JSON.stringify({
         ideaId: idea._id,
         title: idea.title,
@@ -80,8 +76,6 @@ async function createDraft(idea: Idea) {
         needsOwnerStory: idea.needsOwnerStory,
       }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || `Server returned ${res.status}`);
     created.value[idea._id] = data.baseId;
   } catch (err) {
     createError.value[idea._id] = err instanceof Error ? err.message : 'Could not create the draft.';
@@ -112,18 +106,16 @@ async function submitIdea() {
   submitting.value = true;
   formError.value = '';
   try {
-    const token = await getAccessTokenSilently();
-    const res = await fetch('/.netlify/functions/sanity-create-idea', {
+    const token = await authToken();
+    const data = await apiFetch<any>('/.netlify/functions/sanity-create-idea', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      token,
       body: JSON.stringify({
         ...form.value,
         pillar: form.value.pillar || undefined,
         audience: form.value.audience || undefined,
       }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || `Server returned ${res.status}`);
     ideas.value.unshift(data.idea as Idea);
     form.value = blankIdea();
     showForm.value = false;
@@ -247,7 +239,7 @@ async function submitIdea() {
 }
 .assist__intro strong { color: var(--color-text); }
 .assist__state { padding: 32px; text-align: center; color: var(--color-text-secondary); }
-.assist__state--error { color: var(--color-danger, #c0574c); }
+.assist__state--error { color: var(--color-danger); }
 
 .assist__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .idea {
@@ -280,7 +272,7 @@ async function submitIdea() {
 .idea__done { display: inline-flex; align-items: center; gap: 5px; font-size: 0.85rem; color: var(--color-text-secondary); }
 .idea__open { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--color-primary); text-decoration: none; }
 .idea__open:hover { text-decoration: underline; }
-.idea__err { font-size: 0.75rem; color: var(--color-danger, #c0574c); max-width: 200px; text-align: right; }
+.idea__err { font-size: 0.75rem; color: var(--color-danger); max-width: 200px; text-align: right; }
 
 /* Add-idea form */
 .assist__addbar { margin-bottom: 12px; }

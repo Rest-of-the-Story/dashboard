@@ -30,7 +30,9 @@ export interface ContentEditor {
 }
 
 export interface BillingConfig {
-  stripeCustomerId: string;
+  /** Show the Billing page. The Stripe customer lives in STRIPE_CUSTOMER_ID,
+   *  server-side — it must not ship in the browser bundle. */
+  enabled: boolean;
   showPendingCharges: boolean;
   showOfflineInvoices: boolean;
 }
@@ -51,6 +53,8 @@ export interface DashboardConfig {
   clientId: string;
   clientName: string;
   clientDomain: string;
+  /** Client logo shown in the sidebar; falls back to the first letter. */
+  clientLogo?: string;
   clientEmail: string;
   enabledWidgets: string[];
   tutorialVideos: TutorialVideo[];
