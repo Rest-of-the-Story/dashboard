@@ -17,6 +17,11 @@
   --font-heading: 'Libre Baskerville', sans-serif;
   --font-body: 'Nunito Sans', sans-serif;
   --border-radius: 0.25rem;
+
+  /* Status colors — muted to sit beside the sage/blush palette */
+  --color-success: #4a6a4e;
+  --color-warning: #b07d3f;
+  --color-danger: #a8443a;
 }
 
 [data-theme="dark"] {
@@ -33,4 +38,9 @@
   --color-sidebar-text: #cdd6d5;
   --color-sidebar-hover: #202b2e;
   --color-sidebar-active: #567a59;
+
+  /* Lightened so they stay legible on the dark surface */
+  --color-success: #8fbb92;
+  --color-warning: #e0aa66;
+  --color-danger: #e08b80;
 }

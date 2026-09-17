@@ -169,8 +169,8 @@ onMounted(fetchStats);
   color: var(--color-text-secondary, var(--color-text));
 }
 
-.widget__pill-trend--up { color: #16a34a; }
-.widget__pill-trend--down { color: #dc2626; }
+.widget__pill-trend--up { color: var(--color-success); }
+.widget__pill-trend--down { color: var(--color-danger); }
 
 .widget__provider {
   font-size: 0.875rem;

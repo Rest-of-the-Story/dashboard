@@ -27,7 +27,9 @@ const emit = defineEmits<{ (e: 'toggle-mobile'): void }>();
 const route = useRoute();
 const { user, logout } = useAuth0();
 const collapsed = ref(false);
-const darkMode = ref(false);
+// The pre-paint script in index.html already applied the stored/system theme;
+// read it back so the toggle starts in the right position.
+const darkMode = ref(document.documentElement.getAttribute('data-theme') === 'dark');
 
 function doLogout() {
   logout({ logoutParams: { returnTo: window.location.origin } });
@@ -35,7 +37,13 @@ function doLogout() {
 
 function toggleDarkMode() {
   darkMode.value = !darkMode.value;
-  document.documentElement.setAttribute('data-theme', darkMode.value ? 'dark' : 'light');
+  const theme = darkMode.value ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+  try {
+    localStorage.setItem('theme', theme);
+  } catch {
+    // Private mode / blocked storage: the toggle still works for this session.
+  }
 }
 
 interface NavItem { to: string; label: string; icon: unknown }
@@ -59,7 +67,14 @@ const navItems: NavItem[] = [
   >
     <!-- Brand header -->
     <div class="sidebar__brand" :class="collapsed ? 'sidebar__brand--collapsed' : ''">
+      <img
+        v-if="config.clientLogo"
+        :src="config.clientLogo"
+        :alt="config.clientName"
+        class="sidebar__logo"
+      />
       <div
+        v-else
         class="sidebar__avatar"
         :style="{ backgroundColor: 'var(--color-sidebar-active, var(--color-primary))' }"
       >{{ config.clientName.charAt(0) }}</div>
@@ -181,6 +196,13 @@ const navItems: NavItem[] = [
 .sidebar__brand--collapsed {
   padding: 1rem 0.5rem;
   justify-content: center;
+}
+
+.sidebar__logo {
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .sidebar__avatar {
