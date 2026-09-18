@@ -1,4 +1,7 @@
-import { createClient } from '@libsql/client';
+// The /web entrypoint talks to Turso over HTTP. The default export loads a
+// native binding (@libsql/linux-x64-gnu) that Netlify's bundler doesn't ship,
+// so the function failed at import with Runtime.ImportModuleError.
+import { createClient } from '@libsql/client/web';
 import { requireUser } from './_auth';
 
 /**
@@ -74,7 +77,8 @@ const normalize = (row: Record<string, any>): OfflineInvoice => ({
 });
 
 async function fromDatabase(url: string, authToken: string, clientId: string) {
-  const db = createClient({ url, authToken });
+  // The HTTP client wants https://, while Turso hands out libsql:// URLs.
+  const db = createClient({ url: url.replace(/^libsql:\/\//, 'https://'), authToken });
   const { rows } = await db.execute({ sql: SELECT_INVOICES, args: [clientId] });
   return rows.map(row => normalize(row as unknown as Record<string, any>));
 }

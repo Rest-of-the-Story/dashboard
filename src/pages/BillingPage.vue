@@ -63,6 +63,7 @@ const pendingCharges = ref<Invoice[]>([]);
 const recentPayments = ref<Invoice[]>([]);
 const paymentMethod = ref<PaymentMethod | null>(null);
 const portalLoading = ref(false);
+const offlineError = ref<string | null>(null);
 
 function formatCurrency(amount: number, currency = 'usd') {
   return new Intl.NumberFormat('en-US', {
@@ -94,7 +95,12 @@ async function fetchBillingSummary() {
     // it out made the page look like payments had stopped.
     const [data, offline] = await Promise.all([
       apiFetch<any>('/.netlify/functions/stripe-get-billing-summary', { token }),
-      apiFetch<any>('/.netlify/functions/offline-invoices', { token }).catch(() => null),
+      apiFetch<any>('/.netlify/functions/offline-invoices', { token }).catch(err => {
+        // Stripe data still renders; say so rather than quietly dropping history.
+        offlineError.value = 'Could not load invoices paid by Zelle or check.';
+        console.error('Offline invoices unavailable:', err);
+        return null;
+      }),
     ]);
     if (!data.success) throw new Error(data.error || 'Unknown error');
 
@@ -300,6 +306,10 @@ onMounted(fetchBillingSummary);
         <div v-else class="billing-card__empty">
           <p>No payments yet</p>
         </div>
+
+        <p v-if="offlineError" class="billing-offline-error" role="alert">
+          {{ offlineError }}
+        </p>
       </div>
 
       <!-- Payment Method Card -->
@@ -376,6 +386,12 @@ onMounted(fetchBillingSummary);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.billing-offline-error {
+  margin: 0.75rem 1.25rem 1rem;
+  font-size: 0.8125rem;
+  color: var(--color-danger);
 }
 
 .billing-card__empty {
