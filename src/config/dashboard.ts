@@ -6,10 +6,9 @@ const config: DashboardConfig = {
   "clientDomain": "therestofthestory.store",
   "clientLogo": "https://cdn.sanity.io/images/xbjigamf/production/0630e3fe3b0a6043674e1c6cfa8069a7ed92db2c-249x259.svg",
   "clientEmail": "info@therestofthestory.store",
-  "enabledWidgets": [
-    "links",
-    "siteAnalytics"
-  ],
+  // The overview's greeting and month-so-far card replaced the links and
+  // analytics widgets; list optional extras ('tutorials', 'contentEditors') here.
+  "enabledWidgets": [],
   "tutorialVideos": [],
   "links": [
     {
@@ -36,9 +35,12 @@ const config: DashboardConfig = {
     "internalRoutes": [
       "/analytics",
       "/billing",
-      "/support"
+      "/support",
+      "/blog-assist",
+      "/reports"
     ],
-    "conversionPage": "/contact"
+    "conversionPage": "/contact",
+    "trackingSince": "2025-06-17"
   }
 };
 

@@ -4,6 +4,12 @@ import { createHead } from '@unhead/vue';
 import { createAuth0 } from '@auth0/auth0-vue';
 import App from './App.vue';
 import router from './router';
+// Self-hosted brand fallbacks. The brand's own Avenir and Baskerville are
+// system fonts on Apple devices only; everyone else gets these approved
+// substitutes instead of a generic font (see brand-colors.json).
+import '@fontsource/libre-baskerville/400.css';
+import '@fontsource/libre-baskerville/700.css';
+import '@fontsource-variable/nunito-sans';
 import './assets/styles/main.css';
 
 const app = createApp(App);

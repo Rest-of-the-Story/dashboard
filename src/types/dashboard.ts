@@ -1,7 +1,5 @@
 export type WidgetType =
-  | 'siteAnalytics'
   | 'tutorials'
-  | 'links'
   | 'contentEditors';
 
 export interface TutorialVideo {
@@ -47,6 +45,11 @@ export interface AnalyticsConfig {
   internalRoutes?: string[];
   /** Goal page slug for visitor journey funnel (default: '/contact') */
   conversionPage?: string;
+  /**
+   * First day analytics recorded (YYYY-MM-DD). Its month is partial, so it and
+   * anything earlier are never used as a comparison (OVERVIEW-STANDARD 6.2).
+   */
+  trackingSince?: string;
 }
 
 export interface DashboardConfig {

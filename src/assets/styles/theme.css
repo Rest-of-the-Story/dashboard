@@ -1,27 +1,39 @@
-/* Font imports — scaffolder injects @import statements above :root */
+/* Fonts: the brand's Avenir and Baskerville where the device has them (Apple),
+   otherwise the self-hosted substitutes imported in main.ts. */
 
 :root {
   --color-primary: #293b3f;
   --color-secondary: #9fba9a;
   --color-accent: #e1a497;
-  --color-bg: #ffffff;
-  --color-surface: #f4f6f2;
+  /* Cards sit on the page rather than being drawn onto it: a sage-tinted
+     off-white ground, white cards, a soft shadow and a light line. */
+  --color-bg: #f4f6f2;
+  --color-surface: #ffffff;
   --color-text: #293b3f;
   --color-text-secondary: #55676b;
   --color-text-inverse: #ffffff;
+  /* Text on the brand color. Not text-inverse, which is tied to the theme. */
+  --color-on-primary: #ffffff;
   --color-border: #e1e5de;
+  --shadow-card: 0 1px 2px rgba(41, 59, 63, 0.04), 0 2px 8px rgba(41, 59, 63, 0.05);
   --color-sidebar-bg: #293b3f;
   --color-sidebar-text: #dce3e2;
   --color-sidebar-hover: #35494e;
   --color-sidebar-active: #4a6a4e;
-  --font-heading: 'Libre Baskerville', sans-serif;
-  --font-body: 'Nunito Sans', sans-serif;
-  --border-radius: 0.25rem;
+  --font-heading: 'Baskerville', 'Libre Baskerville', Georgia, serif;
+  --font-body: 'Avenir', 'Avenir Next', 'Nunito Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --border-radius: 0.5rem;
 
   /* Status colors — muted to sit beside the sage/blush palette */
   --color-success: #4a6a4e;
   --color-warning: #b07d3f;
   --color-danger: #a8443a;
+
+  /* Trend and notice text: AA as small text on the card surface (5.9:1+). */
+  --color-up: #4a6a4e;
+  --color-down: #a8443a;
+  --color-warn: #92400e;
+  --color-info: #4338ca;
 }
 
 [data-theme="dark"] {
@@ -33,7 +45,10 @@
   --color-text: #e7eceb;
   --color-text-secondary: #afbbba;
   --color-text-inverse: #1a2427;
+  /* The dark-mode brand teal is light, so text on it is dark (6.8:1; white is 2.3:1). */
+  --color-on-primary: #1a2427;
   --color-border: #35454a;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
   --color-sidebar-bg: #141d1f;
   --color-sidebar-text: #cdd6d5;
   --color-sidebar-hover: #202b2e;
@@ -43,4 +58,9 @@
   --color-success: #8fbb92;
   --color-warning: #e0aa66;
   --color-danger: #e08b80;
+
+  --color-up: #8fbb92;
+  --color-down: #e08b80;
+  --color-warn: #fbbf24;
+  --color-info: #a5b4fc;
 }

@@ -123,13 +123,15 @@ export async function handler(event: {
  * can reach it. Never fails the support request — the email is the system of
  * record; a queue outage shouldn't lose the client's message.
  *
- * Env: SUPPORT_WEBHOOK_URL, optional SUPPORT_WEBHOOK_TOKEN
+ * Env: SUPPORT_WEBHOOK_URL, optional SUPPORT_WEBHOOK_TOKEN. The Pipeline's
+ * receive-support-request takes this client's dashboard key, so without a
+ * separate token PIPELINE_DASHBOARD_KEY is sent.
  */
 async function forwardToQueue(payload: SupportRequestPayload): Promise<void> {
   const url = process.env.SUPPORT_WEBHOOK_URL;
   if (!url) return;
 
-  const token = process.env.SUPPORT_WEBHOOK_TOKEN;
+  const token = process.env.SUPPORT_WEBHOOK_TOKEN || process.env.PIPELINE_DASHBOARD_KEY;
   try {
     const res = await fetch(url, {
       method: 'POST',

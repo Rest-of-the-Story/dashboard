@@ -8,6 +8,7 @@ import { RouterLink, useRoute } from 'vue-router';
 import { useAuth0 } from '@auth0/auth0-vue';
 import {
   LayoutDashboard,
+  FileBarChart,
   BarChart3,
   Lightbulb,
   MessageSquare,
@@ -49,7 +50,8 @@ function toggleDarkMode() {
 interface NavItem { to: string; label: string; icon: unknown }
 
 const navItems: NavItem[] = [
-    { to: '/', label: 'Overview', icon: LayoutDashboard },
+  { to: '/', label: 'Overview', icon: LayoutDashboard },
+  { to: '/reports', label: 'Monthly Reports', icon: FileBarChart },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/blog-assist', label: 'Blog Assist', icon: Lightbulb },
   { to: '/support', label: 'Contact & Support', icon: MessageSquare },

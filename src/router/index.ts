@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuth0 } from '@auth0/auth0-vue';
 
 const DashboardHome = () => import('@/pages/DashboardHome.vue');
+const ReportsPage = () => import('@/pages/ReportsPage.vue');
 const AnalyticsPage = () => import('@/pages/AnalyticsPage.vue');
 const BlogAssistPage = () => import('@/pages/BlogAssistPage.vue');
 const SupportPage = () => import('@/pages/SupportPage.vue');
@@ -11,6 +12,7 @@ const NotFound = () => import('@/pages/NotFound.vue');
 
 const routes = [
   { path: '/', name: 'Dashboard', component: DashboardHome },
+  { path: '/reports', name: 'Reports', component: ReportsPage },
   { path: '/analytics', name: 'Analytics', component: AnalyticsPage },
   { path: '/blog-assist', name: 'BlogAssist', component: BlogAssistPage },
   { path: '/support', name: 'Support', component: SupportPage },
