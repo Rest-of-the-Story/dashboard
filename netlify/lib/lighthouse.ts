@@ -10,7 +10,7 @@ import { pipeline } from './pipeline';
  * by everyone and always spent), and this client has no Google service
  * account, so an API key is required.
  *
- * Env: PSI_API_KEY; optional LIGHTHOUSE_URL (defaults to the homepage)
+ * Env: PSI_API_KEY (or GOOGLE_PAGESPEED_API_KEY); optional LIGHTHOUSE_URL (defaults to the homepage)
  *
  * Each test takes Google 10–20 seconds and a scheduled function gets 30, so
  * the two run side by side and anything still running near the limit is
@@ -31,11 +31,13 @@ const TIME_LIMIT_MS = 26_000;
 const rate = (value: number, [good, poor]: readonly [number, number]): Rating =>
   value <= good ? 'good' : value <= poor ? 'needs-work' : 'poor';
 
-export const lighthouseConfigured = () => Boolean(process.env.PSI_API_KEY);
+const psiKey = () => process.env.PSI_API_KEY || process.env.GOOGLE_PAGESPEED_API_KEY;
+
+export const lighthouseConfigured = () => Boolean(psiKey());
 export const lighthouseUrl = () => process.env.LIGHTHOUSE_URL || `https://${config.clientDomain}/`;
 
 async function run(url: string, strategy: Strategy, signal: AbortSignal): Promise<LighthouseResult> {
-  const params = new URLSearchParams({ url, strategy, key: process.env.PSI_API_KEY ?? '' });
+  const params = new URLSearchParams({ url, strategy, key: psiKey() ?? '' });
   for (const category of ['performance', 'accessibility', 'best-practices', 'seo']) params.append('category', category);
 
   const res = await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params}`, { signal });

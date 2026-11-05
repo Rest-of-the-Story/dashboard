@@ -12,7 +12,7 @@ const vite = await createServer({ server: { middlewareMode: true }, appType: 'cu
 
 try {
   const { runLighthouse, saveLighthouse, lighthouseConfigured, lighthouseUrl } = await vite.ssrLoadModule('/netlify/lib/lighthouse.ts');
-  if (!lighthouseConfigured()) throw new Error('PSI_API_KEY is not set in .env');
+  if (!lighthouseConfigured()) throw new Error('PSI_API_KEY (or GOOGLE_PAGESPEED_API_KEY) is not set in .env');
 
   console.log(`Testing ${lighthouseUrl()} …`);
   const check = await runLighthouse();

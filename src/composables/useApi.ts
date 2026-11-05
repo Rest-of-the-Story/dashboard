@@ -44,8 +44,9 @@ export async function apiFetch<T = unknown>(
   }
 
   if (!res.ok) {
-    if (res.status === 401) throw new ApiError('Your session has expired. Please sign in again.', 401);
-    if (res.status === 403) throw new ApiError("This account doesn't have access to the dashboard.", 403);
+    // The server says why it refused; show that rather than a guess.
+    if (res.status === 401) throw new ApiError(`Sign-in problem: ${data?.error || 'not accepted'}. Please sign out and in again.`, 401);
+    if (res.status === 403) throw new ApiError(data?.error || "This account doesn't have access to the dashboard.", 403);
     throw new ApiError(data?.error || `Request failed (${res.status})`, res.status);
   }
 

@@ -15,7 +15,7 @@ import { localToday } from '../lib/time';
  */
 export default async () => {
   if (!lighthouseConfigured() || !pipelineConfigured()) {
-    console.log('Lighthouse check skipped: PSI_API_KEY or the Pipeline connection is not set.');
+    console.log('Lighthouse check skipped: PSI_API_KEY / GOOGLE_PAGESPEED_API_KEY or the Pipeline connection is not set.');
     return new Response('not configured');
   }
 

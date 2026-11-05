@@ -41,7 +41,8 @@ router.beforeEach(async (to) => {
 
   if (!isAuthenticated.value && to.name !== 'NotFound') {
     await loginWithRedirect({
-      appState: { targetUrl: to.fullPath },
+      // auth0-vue returns to appState.target after sign-in (not targetUrl).
+      appState: { target: to.fullPath },
     });
     return false;
   }

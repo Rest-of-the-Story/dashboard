@@ -67,12 +67,21 @@ export async function requireUser(event: {
     const email = typeof payload.email === 'string' ? payload.email.toLowerCase() : undefined;
 
     if (allowed.length && (!email || !allowed.includes(email))) {
-      return deny('Forbidden', 403);
+      console.warn('Signed in but not on AUTH0_ALLOWED_EMAILS:', email ?? '(no email claim)');
+      return deny('This account is not on the dashboard access list', 403);
     }
 
     return { sub: String(payload.sub), email };
   } catch (err) {
-    console.warn('Token rejected:', err instanceof Error ? err.message : err);
+    // Say why, so a broken setup can be diagnosed from the page rather than
+    // only from the function log. None of these reveal anything secret.
+    const code = (err as { code?: string })?.code;
+    const claim = (err as { claim?: string })?.claim;
+    console.warn('Token rejected:', code, claim ?? '', err instanceof Error ? err.message : err);
+    if (code === 'ERR_JWT_EXPIRED') return deny('Session token expired');
+    if (code === 'ERR_JWT_CLAIM_VALIDATION_FAILED' && claim === 'aud') return deny('Token is for a different Auth0 application (check AUTH0_CLIENT_ID)');
+    if (code === 'ERR_JWT_CLAIM_VALIDATION_FAILED' && claim === 'iss') return deny('Token is from a different Auth0 tenant (check AUTH0_DOMAIN)');
+    if (code === 'ERR_JWKS_NO_MATCHING_KEY' || code === 'ERR_JWS_SIGNATURE_VERIFICATION_FAILED') return deny('Token signature not recognized (check AUTH0_DOMAIN)');
     return deny('Unauthorized');
   }
 }
