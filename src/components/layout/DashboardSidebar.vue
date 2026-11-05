@@ -13,6 +13,7 @@ import {
   Lightbulb,
   MessageSquare,
   CreditCard,
+  CircleHelp,
   UserCircle,
   LogOut,
   Sun,
@@ -56,6 +57,7 @@ const navItems: NavItem[] = [
   { to: '/blog-assist', label: 'Blog Assist', icon: Lightbulb },
   { to: '/support', label: 'Contact & Support', icon: MessageSquare },
   { to: '/billing', label: 'Billing', icon: CreditCard },
+  { to: '/help', label: 'Help', icon: CircleHelp },
 ];
 </script>
 

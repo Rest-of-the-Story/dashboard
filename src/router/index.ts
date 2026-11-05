@@ -8,6 +8,7 @@ const AnalyticsPage = () => import('@/pages/AnalyticsPage.vue');
 const BlogAssistPage = () => import('@/pages/BlogAssistPage.vue');
 const SupportPage = () => import('@/pages/SupportPage.vue');
 const BillingPage = () => import('@/pages/BillingPage.vue');
+const HelpPage = () => import('@/pages/HelpPage.vue');
 const NotFound = () => import('@/pages/NotFound.vue');
 
 const routes = [
@@ -17,6 +18,7 @@ const routes = [
   { path: '/blog-assist', name: 'BlogAssist', component: BlogAssistPage },
   { path: '/support', name: 'Support', component: SupportPage },
   { path: '/billing', name: 'Billing', component: BillingPage },
+  { path: '/help', name: 'Help', component: HelpPage },
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },
 ];
 

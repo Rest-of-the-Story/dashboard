@@ -3,7 +3,8 @@
 //   npm run reports:generate                     last complete month (dry run)
 //   npm run reports:generate -- 2026-09          one month (dry run)
 //   npm run reports:generate -- --last 12        the last 12 complete months
-//   …add --write to save; an existing month is replaced.
+//   …add --write to save; an existing month is replaced, unless --missing is
+//   given, which skips months that already have a report (safe for backfills).
 //
 // Months before analytics tracking began (config trackingSince) are skipped.
 // Saving goes through the Pipeline, so PIPELINE_FUNCTIONS_URL and
@@ -13,6 +14,7 @@ import { createServer, loadEnv } from 'vite';
 
 const args = process.argv.slice(2);
 const write = args.includes('--write');
+const missingOnly = args.includes('--missing');
 const lastN = args.includes('--last') ? Number(args[args.indexOf('--last') + 1]) : 0;
 const explicit = args.find((a) => /^\d{4}-\d{2}$/.test(a));
 
@@ -20,12 +22,14 @@ Object.assign(process.env, loadEnv('development', process.cwd(), ''), process.en
 const vite = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'error' });
 
 try {
-  const { buildReport, saveReport, isComplete } = await vite.ssrLoadModule('/netlify/lib/report.ts');
+  const { buildReport, saveReport, isComplete, storedMonths } = await vite.ssrLoadModule('/netlify/lib/report.ts');
   const { lastCompleteMonth, shiftMonth } = await vite.ssrLoadModule('/netlify/lib/time.ts');
 
   const latest = lastCompleteMonth();
+  const stored = missingOnly ? new Set(await storedMonths()) : new Set();
   const months = (explicit ? [explicit] : Array.from({ length: Math.max(1, lastN) }, (_, i) => shiftMonth(latest, -i)).reverse())
-    .filter((m) => isComplete(m) || (console.log(`${m}: skipped, tracking began partway through`), false));
+    .filter((m) => isComplete(m) || (console.log(`${m}: skipped, tracking began partway through`), false))
+    .filter((m) => !stored.has(m) || (console.log(`${m}: skipped, already has a report`), false));
 
   for (const month of months) {
     const report = await buildReport(month);
@@ -35,7 +39,7 @@ try {
         `lighthouse ${report.lighthouse ? 'yes' : 'no'}`
     );
     for (const line of report.highlights) console.log(`   · ${line}`);
-    if (write) await saveReport(report, true);
+    if (write) await saveReport(report, !missingOnly);
   }
   console.log(write ? `\nSaved ${months.length} report(s).` : '\nDry run. Add --write to save.');
 } finally {
