@@ -37,10 +37,16 @@ const config: DashboardConfig = {
       "/billing",
       "/support",
       "/blog-assist",
-      "/reports"
+      "/reports",
+      "/website",
+      "/help"
     ],
     "conversionPage": "/contact",
     "trackingSince": "2025-06-17"
+  },
+  "website": {
+    // "Quarterly Sale": linked from nowhere on the site until the Sale card puts it in the menu.
+    "salePageSlug": "black-friday-sale"
   }
 };
 

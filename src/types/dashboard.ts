@@ -65,4 +65,11 @@ export interface DashboardConfig {
   contentEditors: ContentEditor[];
   billing?: BillingConfig;
   analytics?: AnalyticsConfig;
+  /** The Edit Website page (see netlify/functions/site-content.ts). */
+  website?: WebsiteConfig;
+}
+
+export interface WebsiteConfig {
+  /** Slug of the page the Sale card edits; leave out to hide that card. */
+  salePageSlug?: string;
 }

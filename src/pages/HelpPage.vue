@@ -8,6 +8,7 @@ import {
   BarChart3,
   Lightbulb,
   PenLine,
+  PenSquare,
   CreditCard,
   MessageSquare,
   Video,
@@ -33,6 +34,7 @@ const sections = [
   { key: 'overview', title: 'Overview (the home page)', icon: LayoutDashboard },
   { key: 'reports', title: 'Monthly Reports', icon: FileBarChart },
   { key: 'analytics', title: 'Analytics', icon: BarChart3 },
+  { key: 'website', title: 'Edit Website', icon: PenSquare },
   { key: 'blog', title: 'Blog Assist', icon: Lightbulb },
   { key: 'content', title: 'Editing your website', icon: PenLine },
   ...(showBilling ? [{ key: 'billing', title: 'Billing', icon: CreditCard }] : []),
@@ -101,6 +103,21 @@ const sections = [
             </ul>
           </template>
 
+          <template v-else-if="s.key === 'website'">
+            <p>The things that change most, edited without opening the Studio:</p>
+            <ul>
+              <li><strong>Store hours &amp; closures</strong>: one list that updates every page showing your hours. Use <strong>Add a holiday or closure</strong> for days you're closed, and remove them once they've passed.</li>
+              <li><strong>Header message</strong>: the short line beside your logo on every page. If it mentions your hours, update it when they change.</li>
+              <li><strong>Sale page</strong>: the heading, details and flyer for your next sale, plus a switch to show it in the website menu while the sale is on.</li>
+              <li><strong>Frequently asked questions</strong>: edit, add, reorder or remove questions. Bold text, lists and links work with the buttons above each answer.</li>
+              <li><strong>Phone &amp; email</strong>: changed everywhere they appear at once.</li>
+            </ul>
+            <p>Each section has its own <strong>Save to website</strong> button, and changes show on the website within a minute. <strong>Undo changes</strong> puts a section back the way it was before you started.</p>
+            <p class="help__note">
+              If a section says it has unpublished changes in the Studio, open the Studio, publish or discard that page's draft, then reload. That stops the two from overwriting each other.
+            </p>
+          </template>
+
           <template v-else-if="s.key === 'blog'">
             <p>A shelf of blog post ideas for your store, so you never start from a blank page.</p>
             <ol>
@@ -114,7 +131,7 @@ const sections = [
 
           <template v-else-if="s.key === 'content'">
             <p>
-              Your pages, blog posts, FAQ and store details are edited in the
+              Photos, page text and blog posts are edited in the
               <a v-if="studioUrl" :href="studioUrl" target="_blank" rel="noopener noreferrer">Studio<span class="sr-only"> (opens in a new tab)</span></a><template v-else>Studio</template>.
             </p>
             <ul>
@@ -122,6 +139,7 @@ const sections = [
               <li><strong>To schedule a blog post</strong>, set its publish date in the future. It stays hidden on the website until that date, then appears on its own.</li>
               <li><strong>Lists:</strong> use the Studio's list button rather than typing bullet characters, so lists line up properly.</li>
             </ul>
+            <p>Hours, the header message, the sale page, FAQs and your phone and email can also be changed from <RouterLink to="/website">Edit Website</RouterLink>.</p>
             <p>Want something changed that the Studio doesn't cover, like layout, a new page type or a new feature? Send us an Update or Feature Request.</p>
           </template>
 

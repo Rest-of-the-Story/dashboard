@@ -6,6 +6,7 @@ const DashboardHome = () => import('@/pages/DashboardHome.vue');
 const ReportsPage = () => import('@/pages/ReportsPage.vue');
 const AnalyticsPage = () => import('@/pages/AnalyticsPage.vue');
 const BlogAssistPage = () => import('@/pages/BlogAssistPage.vue');
+const WebsitePage = () => import('@/pages/WebsitePage.vue');
 const SupportPage = () => import('@/pages/SupportPage.vue');
 const BillingPage = () => import('@/pages/BillingPage.vue');
 const HelpPage = () => import('@/pages/HelpPage.vue');
@@ -15,6 +16,7 @@ const routes = [
   { path: '/', name: 'Dashboard', component: DashboardHome },
   { path: '/reports', name: 'Reports', component: ReportsPage },
   { path: '/analytics', name: 'Analytics', component: AnalyticsPage },
+  { path: '/website', name: 'Website', component: WebsitePage },
   { path: '/blog-assist', name: 'BlogAssist', component: BlogAssistPage },
   { path: '/support', name: 'Support', component: SupportPage },
   { path: '/billing', name: 'Billing', component: BillingPage },
